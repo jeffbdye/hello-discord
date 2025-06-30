@@ -6,8 +6,8 @@ import { ChatInputCommandInteraction, SlashCommandBuilder } from 'discord.js';
 // }
 
 export interface ChatCommand {
-    data: SlashCommandBuilder;
-    execute(args: ChatInputCommandInteraction): Promise<void>
+  data: SlashCommandBuilder;
+  execute(args: ChatInputCommandInteraction): Promise<void>
 }
 
 // export interface LocalCommand {

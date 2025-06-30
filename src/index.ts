@@ -1,4 +1,4 @@
-import { Client, Events, MessageFlags } from 'discord.js'; 
+import { Client, Events, MessageFlags } from 'discord.js';
 import { ChatCommand } from '../commands/types';
 import ping from '../commands/utility/ping';
 import flipTable from '../commands/fliptable';
@@ -21,8 +21,7 @@ for (let cmd of initList) {
 // handle chat commands
 // https://discord.js.org/docs/packages/discord.js/14.21.0/ClientEvents:Interface#interactionCreate
 client.on(Events.InteractionCreate, async interaction => {
-	if (!interaction.isChatInputCommand())
-	{
+	if (!interaction.isChatInputCommand()) {
 		return;
 	}
 
