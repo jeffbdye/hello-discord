@@ -1,0 +1,19 @@
+{
+  "name": "hello-discord",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "build": "npx tsc",
+    "start": "node ./dist/index.js",
+    "serve": "npm run build && npm run start"
+  },
+  "author": "Jeff Dye",
+  "description": "",
+  "dependencies": {
+    "discord.js": "^14.21.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.7",
+    "typescript": "^5.8.3"
+  }
+}
