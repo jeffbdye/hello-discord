@@ -20,6 +20,7 @@ for (let cmd of initList) {
 
 // handle chat commands
 // https://discord.js.org/docs/packages/discord.js/14.21.0/ClientEvents:Interface#interactionCreate
+// https://discordjs.guide/slash-commands/response-methods.html#follow-ups
 client.on(Events.InteractionCreate, async interaction => {
 	if (!interaction.isChatInputCommand()) {
 		return;

@@ -1,3 +1,3 @@
 # Hello-discord
 
-Testing discord.js as a nodejs backend.
+Testing discord.js with chat interactions and whatnot.
