@@ -1,10 +1,6 @@
 import { Client, Events, MessageFlags } from 'discord.js';
 import { ChatCommand } from './commands/types';
-import ping from './commands/utility/ping';
-import flipTable from './commands/fliptable';
-import unflip from './commands/unflip';
-import diag from './commands/diag';
-import textOptionCommand from './commands/text-option';
+import initList from './commands'
 const { token } = require('../config.secrets.json');
 
 // The distinction between `client: Client<boolean>` and `readyClient: Client<true>` is important for TypeScript developers.
@@ -14,7 +10,6 @@ client.once(Events.ClientReady, readyClient => {
 	console.log(`Ready! Logged in as ${readyClient.user.tag}`);
 });
 
-let initList = [ping, flipTable, unflip, diag, textOptionCommand];
 let commands = new Map<string, ChatCommand>();
 for (let cmd of initList) {
 	commands.set(cmd.data.name, cmd);

@@ -1,12 +1,8 @@
 import { REST, Routes } from 'discord.js';
 const { token, clientId, guildId } = require('../config.secrets.json');
-import ping from './commands/utility/ping';
-import flipTable from './commands/fliptable';
-import unflip from './commands/unflip';
-import diag from './commands/diag';
-import textOptionCommand from './commands/text-option';
+import initList from './commands'
 
-let commands = [ping, flipTable, unflip, diag, textOptionCommand].map(c => c.data);
+let commands = initList.map(c => c.data);
 
 // Construct and prepare an instance of the REST module
 const rest = new REST().setToken(token);
