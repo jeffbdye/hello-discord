@@ -13,18 +13,40 @@ let ephemeralConfirm: ChatCommand = {
   execute: async (interaction) => {
     console.log('Received interaction', interaction);
     const confirm = new ButtonBuilder()
-			.setCustomId('confirm')
-			.setLabel('What it be')
-			.setStyle(ButtonStyle.Primary);
+      .setCustomId('confirm')
+      .setLabel('What it be')
+      .setStyle(ButtonStyle.Primary);
 
-		const cancel = new ButtonBuilder()
-			.setCustomId('cancel')
-			.setLabel('Nah')
+    const cancel = new ButtonBuilder()
+      .setCustomId('cancel')
+      .setLabel('Nah')
       .setStyle(ButtonStyle.Secondary);
-    
+
     const row = new ActionRowBuilder<ButtonBuilder>()
-			.addComponents(confirm, cancel);
-    await interaction.reply({ content: `What it do?`, components: [row], flags: MessageFlags.Ephemeral  });
+      .addComponents(confirm, cancel);
+    const response = await interaction.reply({
+      content: `What it do?`,
+      components: [row],
+      flags: MessageFlags.Ephemeral,
+      withResponse: true,
+    });
+
+    const collectorFilter = i => i.user.id === interaction.user.id;
+
+    try {
+      const confirmation = await response.resource.message.awaitMessageComponent({
+        filter: collectorFilter,
+        time: 60_000
+      });
+
+      if (confirmation.customId === 'confirm') {
+        await confirmation.update({ content: `People don't think it be like it is`, components: [] });
+      } else if (confirmation.customId === 'cancel') {
+        await confirmation.update({ content: 'Nvm', components: [] });
+      }
+    } catch {
+      await interaction.editReply({ content: 'Confirmation not received within 1 minute, cancelling', components: [] });
+    }
   },
 };
 
