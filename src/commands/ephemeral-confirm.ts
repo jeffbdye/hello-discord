@@ -31,16 +31,17 @@ let ephemeralConfirm: ChatCommand = {
       withResponse: true,
     });
 
-    const collectorFilter = i => i.user.id === interaction.user.id;
-
     try {
       const confirmation = await response.resource.message.awaitMessageComponent({
-        filter: collectorFilter,
+        filter: i => i.user.id === interaction.user.id,
         time: 60_000
       });
 
       if (confirmation.customId === 'confirm') {
-        await confirmation.update({ content: `People don't think it be like it is`, components: [] });
+        await confirmation.update({
+          content: `People don't think it be like it is`,
+          components: [],
+        });
       } else if (confirmation.customId === 'cancel') {
         await confirmation.update({ content: 'Nvm', components: [] });
       }
