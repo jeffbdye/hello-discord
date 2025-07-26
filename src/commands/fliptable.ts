@@ -1,5 +1,5 @@
 import { SlashCommandBuilder } from 'discord.js';
-import { ChatCommand } from './types';
+import { ChatCommand } from './utility/types';
 
 let flipCommand: ChatCommand = {
 	data: new SlashCommandBuilder()

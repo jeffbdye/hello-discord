@@ -1,7 +1,7 @@
 // ephemeral message showing preview of chosen options, with a button to confirm/reject the options
 
 import { SlashCommandBuilder, ButtonBuilder, ButtonStyle, ActionRowBuilder, MessageFlags } from 'discord.js';
-import { ChatCommand } from './types';
+import { ChatCommand } from './utility/types';
 
 // https://discordjs.guide/slash-commands/response-methods.html#ephemeral-responses
 // https://discordjs.guide/interactive-components/buttons.html

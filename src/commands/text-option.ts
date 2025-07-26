@@ -1,5 +1,5 @@
 import { SlashCommandBuilder } from 'discord.js';
-import { ChatCommand } from './types';
+import { ChatCommand } from './utility/types';
 
 // https://discordjs.guide/slash-commands/advanced-creation.html#adding-options
 // https://discordjs.guide/slash-commands/parsing-options.html#choices

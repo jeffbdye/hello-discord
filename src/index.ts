@@ -1,5 +1,5 @@
 import { Client, Events, MessageFlags } from 'discord.js';
-import { ChatCommand } from './commands/types';
+import { ChatCommand } from './commands/utility/types';
 import initList from './commands'
 const { token } = require('../config.secrets.json');
 
