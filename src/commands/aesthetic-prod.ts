@@ -1,6 +1,7 @@
-import { SlashCommandBuilder, ButtonBuilder, ButtonStyle, ActionRowBuilder, MessageFlags, AttachmentBuilder, codeBlock } from 'discord.js';
+import { SlashCommandBuilder, ButtonBuilder, ButtonStyle, ActionRowBuilder, MessageFlags, AttachmentBuilder, codeBlock, italic, bold } from 'discord.js';
 import { ChatCommand } from './utility/types';
 import { aesthetic, TransformState } from './utility/expands';
+import { EOL } from 'os';
 
 const cancellationMessages = [
   'Cancelled.',
@@ -8,6 +9,14 @@ const cancellationMessages = [
   'Not this time?',
   'Guess not. No worries tho',
   'Cancelled. Next time, though.'
+];
+
+let aestheticOptions: { name: string, value: TransformState, description: string }[] = [
+  { name: 'Aesthetic', value: 'aesthetic', description: 'row, diagonal, and column-ify' },
+  { name: 'Spaceship', value: 'spaceship', description: 'increasing numbers of spaces in between each character per line' },
+  { name: 'Star', value: 'star', description: 'decreasing numbers of spaces in between each character per line' },
+  { name: 'Valley', value: 'valley', description: 'removes a character from the string for each line' },
+  { name: 'Mountain', value: 'mountain', description: 'adds a character from the string for each line' },
 ];
 
 let aestheticProd: ChatCommand = {
@@ -25,13 +34,7 @@ let aestheticProd: ChatCommand = {
         .setName('style')
         .setDescription('The transform style to use')
         .setRequired(true)
-        .addChoices(
-          { name: 'Aesthetic', value: 'aesthetic' },
-          { name: 'Spaceship', value: 'spaceship' },
-          { name: 'Star', value: 'star' },
-          { name: 'Valley', value: 'valley' },
-          { name: 'Mountain', value: 'mountain' }
-        )
+        .addChoices(aestheticOptions)
     ),
   execute: async (interaction) => {
     const text = interaction.options.getString('text');
@@ -59,8 +62,9 @@ let aestheticProd: ChatCommand = {
       const clicked = await message.awaitMessageComponent({ filter, time: 120_000 });
       if (clicked.customId === 'confirm') {
         await clicked.update({ content: 'Sending!', components: [] });
+        const confirmedOutput = `${bold(`@${interaction.user.displayName}`)}:${EOL}${output}${EOL}`;
         await interaction.followUp({
-          content: output,
+          content: confirmedOutput,
         });
       } else {
         const cancellationMessage = getRandomCancelledMessage();
@@ -72,7 +76,7 @@ let aestheticProd: ChatCommand = {
   },
 };
 
-// TODO: account for if the user has sent a message yet - dont' send a random message until after the first
+// TODO: account for if the user has sent a message yet - don't send a random message until after the first
 function getRandomCancelledMessage() {
   const messageIndex = Math.floor(Math.random() * cancellationMessages.length);
   return cancellationMessages[messageIndex];
