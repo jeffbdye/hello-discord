@@ -11,9 +11,18 @@
 
 // ephemeral message showing preview of chosen options, with a button to confirm/reject the options
 
-import { SlashCommandBuilder, ButtonBuilder, ButtonStyle, ActionRowBuilder, MessageFlags, AttachmentBuilder, codeBlock, StringSelectMenuBuilder, StringSelectMenuOptionBuilder } from 'discord.js';
+import { SlashCommandBuilder, ButtonBuilder, ButtonStyle, ActionRowBuilder, MessageFlags, AttachmentBuilder, codeBlock, StringSelectMenuBuilder, StringSelectMenuOptionBuilder, bold } from 'discord.js';
 import { ChatCommand } from './utility/types';
 import { aesthetic, TransformState } from './utility/expands';
+import { EOL } from 'os';
+
+const cancellationMessages = [
+  'Cancelled.',
+  'Not like this :sob:',
+  'Not this time?',
+  'Guess not. No worries tho',
+  'Cancelled. Next time, though.'
+];
 
 let aestheticOptions: { name: string, value: TransformState, description: string }[] = [
   { name: 'Aesthetic', value: 'aesthetic', description: 'row, diagonal, and column-ify' },
@@ -34,7 +43,7 @@ let aestheticTest: ChatCommand = {
     .addStringOption((opt) =>
       opt
         .setName('text')
-        .setDescription('The text to make ａ e s t h e t i c')
+        .setDescription('The text to make ａｅｓｔｈｅｔｉｃ')
         .setRequired(true)
     )
     .addStringOption((opt) =>
@@ -44,36 +53,41 @@ let aestheticTest: ChatCommand = {
         .setRequired(true)
         .addChoices(aestheticOptions)
     ),
-  execute: async (interaction) => {
-   await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+   execute: async (interaction) => {
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
-  let text = interaction.options.getString('text');
-  let style = interaction.options.getString('style') as TransformState ?? 'aesthetic';
-
-  const renderMenu = (current: TransformState) =>
-    new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
-      new StringSelectMenuBuilder()
-        .setCustomId('modify')
-        .setPlaceholder('Choose style…')
-        .addOptions(
-          ...aestheticOptions.map(o =>
-            new StringSelectMenuOptionBuilder()
-              .setLabel(o.name)
-              .setValue(o.value)
-              .setDescription(o.description)
-              .setDefault(o.value === current)
-          )
-        )
-        .setMinValues(1).setMaxValues(1)
-    );
+    const text = interaction.options.getString('text');
+    let style = interaction.options.getString('style') as TransformState ?? 'aesthetic';
     
-    const confirmRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
-      new ButtonBuilder().setCustomId('confirm').setLabel('Confirm').setStyle(ButtonStyle.Success),
-      new ButtonBuilder().setCustomId('cancel').setLabel('Cancel').setStyle(ButtonStyle.Danger)
+    const renderMenu = (current: TransformState) =>
+      new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
+        new StringSelectMenuBuilder()
+          .setCustomId('modify')
+          .setPlaceholder('Choose style…')
+          .addOptions(
+            ...aestheticOptions.map(o =>
+              new StringSelectMenuOptionBuilder()
+                .setLabel(o.name)
+                .setValue(o.value)
+                .setDescription(o.description)
+                .setDefault(o.value === current)
+            )
+          )
+          .setMinValues(1).setMaxValues(1)
+      );
+
+    const confirmRow = new ActionRowBuilder<ButtonBuilder>()
+      .addComponents(
+        new ButtonBuilder()
+          .setCustomId('confirm').setLabel('Confirm')
+          .setStyle(ButtonStyle.Success),
+        new ButtonBuilder()
+          .setCustomId('cancel').setLabel('Cancel')
+          .setStyle(ButtonStyle.Secondary),
     );
 
     const output = renderStyledText(text, style);
-    
+  
     const message = await interaction.editReply({
       content: output,
       components: [renderMenu(style), confirmRow],
@@ -93,13 +107,15 @@ let aestheticTest: ChatCommand = {
             components: [renderMenu(style), confirmRow]
           });
         } else if (i.isButton() && i.customId === 'confirm') {
-          const updated = renderStyledText(text, style);
           await i.update({ content: 'Sending!', components: [] });
+
+          const confirmedOutput = `${bold(`@${interaction.user.displayName}`)}:${EOL}${renderStyledText(text, style)}${EOL}`;
           await interaction.channel.send({
-            content: updated,
+            content: confirmedOutput,
           })
         } else {
-          await i.update({ content: 'Cancelled', components: [] });
+        const cancellationMessage = getRandomCancelledMessage();
+          await i.update({ content: cancellationMessage, components: [] });
         }
       });
 
@@ -114,6 +130,12 @@ let aestheticTest: ChatCommand = {
     }
   },
 };
+
+// TODO: account for if the user has sent a message yet - don't send a random message until after the first
+function getRandomCancelledMessage() {
+  const messageIndex = Math.floor(Math.random() * cancellationMessages.length);
+  return cancellationMessages[messageIndex];
+}
 
 function renderStyledText(text: string, style: TransformState) {
   const transformed = aesthetic(text, style, true, true, true, true);
