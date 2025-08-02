@@ -26,6 +26,7 @@ let aestheticOptions: { name: string, value: TransformState, description: string
 // https://discordjs.guide/slash-commands/response-methods.html#ephemeral-responses
 // https://discordjs.guide/interactive-components/buttons.html
 // https://discordjs.guide/interactive-components/interactions.html#responding-to-component-interactions
+// https://discordjs.guide/popular-topics/collectors.html#basic-message-component-collector
 let aestheticTest: ChatCommand = {
   data: new SlashCommandBuilder()
     .setName('aesthetic-test')
@@ -44,80 +45,72 @@ let aestheticTest: ChatCommand = {
         .addChoices(aestheticOptions)
     ),
   execute: async (interaction) => {
-    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+   await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
-    const text = interaction.options.getString('text');
-    const style = interaction.options.getString('style') as TransformState ?? 'aesthetic';
-    const modified = interaction.options.getString('modify') as TransformState ?? 'aesthetic';
+  let text = interaction.options.getString('text');
+  let style = interaction.options.getString('style') as TransformState ?? 'aesthetic';
+
+  const renderMenu = (current: TransformState) =>
+    new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
+      new StringSelectMenuBuilder()
+        .setCustomId('modify')
+        .setPlaceholder('Choose style…')
+        .addOptions(
+          ...aestheticOptions.map(o =>
+            new StringSelectMenuOptionBuilder()
+              .setLabel(o.name)
+              .setValue(o.value)
+              .setDescription(o.description)
+              .setDefault(o.value === current)
+          )
+        )
+        .setMinValues(1).setMaxValues(1)
+    );
+    
+    const confirmRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
+      new ButtonBuilder().setCustomId('confirm').setLabel('Confirm').setStyle(ButtonStyle.Success),
+      new ButtonBuilder().setCustomId('cancel').setLabel('Cancel').setStyle(ButtonStyle.Danger)
+    );
+
     const output = renderStyledText(text, style);
-
-    const confirmButton = new ButtonBuilder()
-      .setCustomId('confirm')
-      .setLabel('Confirm')
-      .setStyle(ButtonStyle.Success);
-
-    // list of options from the select above
-    // set default based on what was chosen before
-    const dropdownOptions = aestheticOptions.map(o => {
-      return new StringSelectMenuOptionBuilder()
-        .setLabel(o.name)
-        .setValue(o.value)
-        .setDescription(o.description)
-        // .setEmoji('123456789012345678')
-        .setDefault((modified ?? style) === o.value);
-    });
-    const select = new StringSelectMenuBuilder()
-      .setCustomId('modify')
-      .addOptions(dropdownOptions);
     
-    const cancel = new ButtonBuilder()
-      .setCustomId('cancel')
-      .setLabel('Cancel')
-      .setStyle(ButtonStyle.Danger);
-
-    const optionsRow = new ActionRowBuilder<StringSelectMenuBuilder>()
-      .addComponents(select);
-    
-    const confirmRow = new ActionRowBuilder<ButtonBuilder>()
-      .addComponents(
-        confirmButton,
-        cancel,
-      );
-
     const message = await interaction.editReply({
       content: output,
-      // files: [new AttachmentBuilder(canvasBuffer, { name: 'aesthetic.png' })],
-      components: [optionsRow, confirmRow],
+      components: [renderMenu(style), confirmRow],
     });
 
-    const filter = i => i.user.id === interaction.user.id;
+    const collector = message.createMessageComponentCollector({
+      filter: i => i.user.id === interaction.user.id,
+      time: 120_000,
+    });
+
     try {
-      const clicked = await message.awaitMessageComponent({ filter, time: 120_000 });
-      if (clicked.customId === 'confirm') {
-        const lastStyle = modified ?? style;
-        const updated = renderStyledText(text, lastStyle);
-        await clicked.update({ content: 'Sending!', components: [] });
-        await interaction.channel.send({
-          content: updated,
-          // options: {}
-          // reply: {}
-        })
-        await interaction.followUp({
-          content: output,
-          // content: 'Here’s your aesthetic text:',
-          // files: [new AttachmentBuilder(canvasBuffer, { name: 'aesthetic.png' })],
-        });
-      }
-      else if (clicked.customId === 'modify') {
-        // regenerate & update the snippet
-        const updated = renderStyledText(text, style);
-        await clicked.update({ content: updated, components: [optionsRow, confirmRow]});
-      }
-      else {
-        await clicked.update({ content: 'Cancelled', components: [] });
-      }
-    } catch {
-      await interaction.editReply({ content: 'Timed out — please try again', components: [] });
+      collector.on('collect', async i => {
+        if (i.isStringSelectMenu() && i.customId === 'modify') {
+          style = i.values[0] as TransformState;
+          await i.update({
+            content: renderStyledText(text, style),
+            components: [renderMenu(style), confirmRow]
+          });
+        } else if (i.isButton() && i.customId === 'confirm') {
+          const updated = renderStyledText(text, style);
+          await i.update({ content: 'Sending!', components: [] });
+          await interaction.channel.send({
+            content: updated,
+          })
+        } else {
+          await i.update({ content: 'Cancelled', components: [] });
+        }
+      });
+
+      collector.on('end', async (_, reason) => {
+        if (reason !== 'confirmed' && reason !== 'cancelled') {
+          await interaction.editReply({ content: 'Timed out — please try again', components: [] });
+        }
+      });
+    } catch (e) {
+      console.error(e);
+      await interaction.editReply({ content: 'An unexpected error occurred.', components: [] });
     }
   },
 };
