@@ -11,10 +11,16 @@
   "author": "Jeff Dye",
   "description": "",
   "dependencies": {
-    "discord.js": "^14.21.0"
+    "discord.js": "^14.21.0",
+    "dotenv": "^17.2.0",
+    "express": "^5.1.0",
+    "serve-static": "^2.2.0",
+    "typescript": "^5.8.3"
   },
   "devDependencies": {
+    "@types/express": "^5.0.3",
     "@types/node": "^24.0.7",
-    "typescript": "^5.8.3"
+    "@types/serve-static": "^1.15.8",
+    "prettier": "3.6.2"
   }
 }
