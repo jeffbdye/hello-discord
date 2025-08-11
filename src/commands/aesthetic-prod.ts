@@ -8,12 +8,16 @@ import {
   bold,
   StringSelectMenuBuilder,
   StringSelectMenuOptionBuilder,
+  AttachmentBuilder,
+  subtext,
 } from 'discord.js';
 import { ChatCommand } from './utility/types';
 import { aesthetic, TransformState } from './utility/expands';
-import { EOL } from 'os';
 import { getRandomCancelledMessage } from './utility/cancellation';
 import { getSignature } from './utility/signature';
+import { EOL, tmpdir } from 'os';
+import { promises as fs } from 'fs';
+import { join } from 'path';
 
 let aestheticOptions: {
   name: string;
@@ -49,7 +53,7 @@ let aestheticOptions: {
   },
 ];
 
-let aestheticProd: ChatCommand = {
+let aestheticTest: ChatCommand = {
   data: new SlashCommandBuilder()
     .setName('aesthetic')
     .setDescription('Generate stylized aesthetic text.')
@@ -118,20 +122,42 @@ let aestheticProd: ChatCommand = {
       collector.on('collect', async (i) => {
         if (i.isStringSelectMenu() && i.customId === 'modify') {
           style = i.values[0] as TransformState;
+          const { content, files, filePath } = await renderOutput(text, style);
+
           await i.update({
-            content: renderStyledText(text, style),
+            content: content,
+            files: files,
             components: [renderMenu(style), confirmRow],
           });
-        } else if (i.isButton() && i.customId === 'confirm') {
-          await i.update({ content: 'Sending!', components: [] });
 
-          const confirmedOutput =
-            `${bold(`@${interaction.user.displayName}`)}:` +
-            `${EOL}${renderStyledText(text, style)}${EOL}` +
-            getSignature('posted by /aesthetic');
+          if (filePath) {
+            await fs.unlink(filePath);
+          }
+        } else if (i.isButton() && i.customId === 'confirm') {
+          await i.update({ content: 'Sending!', files:[], components: [] });
+
+          const { content, files, filePath } = await renderOutput(text, style);
+
+          const userAttribution = `${bold(`@${interaction.user.displayName}`)}:`;
+
+          const confirmedOutput = filePath
+            ? userAttribution +
+              EOL +
+              viewAttachmentHint +
+              EOL +
+              getSignature('/aesthetic')
+            : userAttribution +
+              `${EOL}${content}${EOL}` +
+              getSignature('/aesthetic');
+
           await interaction.channel.send({
             content: confirmedOutput,
+            files: files,
           });
+
+          if (filePath) {
+            await fs.unlink(filePath);
+          }
         } else {
           const cancellationMessage = getRandomCancelledMessage();
           await i.update({ content: cancellationMessage, components: [] });
@@ -161,4 +187,35 @@ function renderStyledText(text: string, style: TransformState) {
   return codeBlock(transformed);
 }
 
-export default aestheticProd;
+async function createTempAttachment(
+  content: string,
+  filename = 'output.txt',
+): Promise<{ attachment: AttachmentBuilder; filePath: string }> {
+  const tempDir = tmpdir();
+  const filePath = join(tempDir, `${Date.now()}-${filename}`);
+  await fs.writeFile(filePath, content, 'utf-8');
+  const attachment = new AttachmentBuilder(filePath, { name: filename });
+  return { attachment, filePath };
+}
+
+async function renderOutput(
+  text: string,
+  style: TransformState,
+): Promise<{ content: string; files: AttachmentBuilder[]; filePath?: string }> {
+  const transformed = aesthetic(text, style, true, true, true, true);
+  if (transformed.length > 1900) {
+    // Use 1900 to leave room for filename and message content
+    const { attachment, filePath } = await createTempAttachment(transformed);
+    return {
+      content: viewAttachmentHint,
+      files: [attachment],
+      filePath,
+    };
+  } else {
+    return { content: codeBlock(transformed), files: [], filePath: null };
+  }
+}
+
+const viewAttachmentHint = subtext('see attachment - view whole file:');
+
+export default aestheticTest;
