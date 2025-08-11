@@ -28,7 +28,7 @@ const FALLBACKS: Record<string, string[]> = {
   P: ['🅿️'], // P button (parking)
   R: ['®️'], // Registered trademark
   S: ['5️⃣'], // 5 keycap
-  T: ['➕','7️⃣'], // Plus, 7 keycap
+  T: ['➕', '7️⃣'], // Plus, 7 keycap
   X: ['❌', '✖️', '❎'], // Cross marks
 };
 
@@ -134,11 +134,11 @@ let regionalReact: ChatCommand = {
       return;
     }
 
-    // intentionally joining the result with zero-width space unicode \u200B
     await interaction.editReply(`Reacted with: ${renderUnicode(plan)}`);
   },
 };
 
+// intentionally joining the result with zero-width space unicode \u200B
 function renderUnicode(plan: string[]) {
   return plan.join('\u200B');
 }
@@ -164,7 +164,8 @@ function buildEmojiPlan(
 
     if (seen === 0 && !used.has(primary)) {
       chosen = primary;
-    } else { // else, check for another fallback
+    } else {
+      // else, check for another fallback
       const fb = FALLBACKS[raw] ?? [];
       chosen = fb.find((e) => !used.has(e));
     }
